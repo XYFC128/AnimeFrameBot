@@ -23,8 +23,13 @@ func HandleUpload(imageDir string) http.HandlerFunc {
 			}
 			defer file.Close()
 
-			if !isImage(handler) {
+			if !isImage(file) {
 				http.Error(w, "File is not an image", http.StatusBadRequest)
+				return
+			}
+
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				http.Error(w, "Error resetting file cursor", http.StatusInternalServerError)
 				return
 			}
 

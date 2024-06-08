@@ -2,14 +2,18 @@ package upload
 
 import (
 	"mime/multipart"
-	"path/filepath"
-	"strings"
+	"net/http"
 )
 
-func isImage(handler *multipart.FileHeader) bool {
-	ext := strings.ToLower(filepath.Ext(handler.Filename))
-	switch ext {
-	case ".jpg", ".jpeg", ".png", ".gif":
+func isImage(file multipart.File) bool {
+	buffer := make([]byte, 512)
+	if _, err := file.Read(buffer); err != nil {
+		return false
+	}
+
+	contentType := http.DetectContentType(buffer)
+	switch contentType {
+	case "image/jpeg", "image/png", "image/gif":
 		return true
 	}
 	return false
