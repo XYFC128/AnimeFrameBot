@@ -125,7 +125,7 @@ func TestRestPostUploadEndpoint(t *testing.T) {
 	require.NoError(t, err)
 	bw.Close()
 
-	req, err := http.NewRequest(http.MethodPost, "/frame/", &b)
+	req, err := http.NewRequest(http.MethodPost, "/frame", &b)
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", bw.FormDataContentType())
 	w := httptest.NewRecorder()
