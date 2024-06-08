@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"strconv"
 
 	"AnimeFrameBot/internal/frame"
 
@@ -216,4 +217,31 @@ func TestRestPostUploadEndpoint(t *testing.T) {
 			assert.Equal(t, tt.fileExists, !os.IsNotExist(err))
 		})
 	}
+}
+
+func FuzzRandomFrame(f *testing.F) {
+	server := NewServer(filepath.Join(basepath, "images"))
+	files, err := os.ReadDir(filepath.Join(basepath, "images"))
+	require.NoError(f, err)
+	imageCount := len(files)
+
+	f.Fuzz(func(t *testing.T, count int) {
+		req, err := http.NewRequest(http.MethodGet, "/frame/random/" + strconv.Itoa(count), nil)
+		require.NoError(t, err)
+		w := httptest.NewRecorder()
+
+		server.ServeHTTP(w, req)
+
+		res := w.Result()
+
+		if count >= 0 && count <= imageCount {
+			assert.Equal(t, http.StatusOK, res.StatusCode)
+			var frames []frame.Frame
+			e := json.Unmarshal(w.Body.Bytes(), &frames)
+			require.NoError(t, e)
+			assert.LessOrEqual(t, len(frames), count)
+		} else {
+			assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		}
+	})
 }
