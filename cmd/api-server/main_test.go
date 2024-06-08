@@ -64,6 +64,14 @@ func TestRestGetEndpoints(t *testing.T) {
 			},
 		},
 		{
+			name: "random bad imageDir",
+			args: args{
+				endpoint:   "/frame/random/3",
+				method:     http.MethodGet,
+				wantStatus: http.StatusInternalServerError,
+			},
+		},
+		{
 			name: "fuzzy frame normal",
 			args: args{
 				endpoint:   "/frame/fuzzy/some/3",
@@ -93,10 +101,23 @@ func TestRestGetEndpoints(t *testing.T) {
 				wantStatus: http.StatusBadRequest,
 			},
 		},
+		{
+			name: "fuzzy bad imageDir",
+			args: args{
+				endpoint:   "/frame/fuzzy/some/3",
+				method:     http.MethodGet,
+				wantStatus: http.StatusInternalServerError,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := NewServer(filepath.Join(basepath, "images"))
+			var server http.Handler
+			if tt.name == "random bad imageDir" || tt.name == "fuzzy bad imageDir" {
+				server = NewServer("invalid")
+			} else {
+				server = NewServer(filepath.Join(basepath, "images"))
+			}
 			req, err := http.NewRequest(tt.args.method, tt.args.endpoint, nil)
 			require.NoError(t, err)
 			w := httptest.NewRecorder()
@@ -113,28 +134,86 @@ func TestRestGetEndpoints(t *testing.T) {
 }
 
 func TestRestPostUploadEndpoint(t *testing.T) {
-	imageDir := t.TempDir()
-	server := NewServer(imageDir)
+	tests := []struct {
+		name        string
+		fileContent []byte
+		fieldname string
+		filename    string
+		wantStatus  int
+		fileExists  bool
+	}{
+		{
+			name:        "valid jpeg image",
+			fileContent: []byte("\xFF\xD8\xFF"),
+			fieldname:   "image",
+			filename:    "test.jpg",
+			wantStatus:  http.StatusCreated,
+			fileExists:  true,
+		},
+		{
+			name:        "file larger than 10MB",
+			fileContent: make([]byte, 10*1024*1024+1),
+			fieldname:   "image",
+			filename:    "test.jpg",
+			wantStatus:  http.StatusBadRequest,
+			fileExists:  false,
+		},
+		{
+			name:        "fieldname not image",
+			fileContent: []byte("\xFF\xD8\xFF"),
+			fieldname:   "file",
+			filename:    "test.jpg",
+			wantStatus:  http.StatusBadRequest,
+			fileExists:  false,
+		},
+		{
+			name:        "file not an image",
+			fileContent: []byte("invalid"),
+			fieldname:   "image",
+			filename:    "test.jpg",
+			wantStatus:  http.StatusBadRequest,
+			fileExists:  false,
+		},
+		{
+			name:        "change permission of imageDir",
+			fileContent: []byte("\xFF\xD8\xFF"),
+			fieldname:   "image",
+			filename:    "test.jpg",
+			wantStatus:  http.StatusInternalServerError,
+			fileExists:  true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			imageDir := t.TempDir()
+			if tt.name == "change permission of imageDir" {
+				err := os.Chmod(imageDir, 0000)
+				require.NoError(t, err)
+			}
 
-	var b bytes.Buffer
-	bw := multipart.NewWriter(&b)
+			server := NewServer(imageDir)
 
-	fw, err := bw.CreateFormFile("image", "test.jpg")
-	require.NoError(t, err)
-	_, err = fw.Write([]byte("\xFF\xD8\xFF"))
-	require.NoError(t, err)
-	bw.Close()
+			var b bytes.Buffer
+			bw := multipart.NewWriter(&b)
 
-	req, err := http.NewRequest(http.MethodPost, "/frame", &b)
-	require.NoError(t, err)
-	req.Header.Set("Content-Type", bw.FormDataContentType())
-	w := httptest.NewRecorder()
+			fw, err := bw.CreateFormFile(tt.fieldname, tt.filename)
+			require.NoError(t, err)
+			_, err = fw.Write(tt.fileContent)
+			require.NoError(t, err)
+			bw.Close()
 
-	server.ServeHTTP(w, req)
-	res := w.Result()
-	assert.Equalf(t, http.StatusCreated, res.StatusCode, "%s", w.Body.String())
+			req, err := http.NewRequest(http.MethodPost, "/frame", &b)
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", bw.FormDataContentType())
+			w := httptest.NewRecorder()
 
-	savedPath := filepath.Join(imageDir, "test.jpg")
-	_, err = os.Stat(savedPath)
-	assert.Equal(t, false, os.IsNotExist(err))
+			server.ServeHTTP(w, req)
+			res := w.Result()
+			assert.Equal(t, tt.wantStatus, res.StatusCode)
+
+			savedPath := filepath.Join(imageDir, tt.filename)
+			_, err = os.Stat(savedPath)
+			assert.Equal(t, tt.fileExists, !os.IsNotExist(err))
+		})
+	}
 }
