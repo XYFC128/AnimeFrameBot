@@ -1,7 +1,11 @@
 package frame
 
 import (
+<<<<<<< HEAD
 	"os"
+=======
+	"fmt"
+>>>>>>> d65ade5 (feat: add fuzzing test for random)
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -154,4 +158,20 @@ func TestGetRandomFrames(t *testing.T) {
 			assert.Equal(t, tt.numFrames, len(f))
 		}
 	}
+}
+
+func FuzzGetRandomFrames(f *testing.F) {
+	var frames []Frame
+	for i := 'a'; i <= 'e'; i++ {
+		frames = append(frames, Frame{Filename: string(i) + ".png", Subtitle: string(i)})
+	}
+	f.Fuzz(func(t *testing.T, numFrames int) {
+		frames, err := getRandomFrames(frames, numFrames)
+		if numFrames < 0 || numFrames > len(frames) {
+			assert.EqualError(t, err, "invalid number of frames: "+fmt.Sprint(numFrames))
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, numFrames, len(frames))
+		}
+	})
 }
