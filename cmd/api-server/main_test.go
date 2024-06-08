@@ -19,7 +19,7 @@ import (
 
 var (
 	_, b, _, _ = runtime.Caller(0)
-	basepath   = filepath.Join(filepath.Dir(b), "../..")
+	basepath   = filepath.Dir(b)
 )
 
 func TestRestGetEndpoints(t *testing.T) {
