@@ -1,11 +1,11 @@
 package upload
 
 import (
-	"mime/multipart"
+	"io"
 	"net/http"
 )
 
-func isImage(file multipart.File) bool {
+func isImage(file io.Reader) bool {
 	buffer := make([]byte, 512)
 	if _, err := file.Read(buffer); err != nil {
 		return false

@@ -1,6 +1,7 @@
 package upload
 
 import (
+	"fmt"
 	"bytes"
 	"testing"
 	"net/http"
@@ -82,4 +83,15 @@ func TestIsImage(t *testing.T) {
 			assert.Equal(t, tt.isImage, isImage(file))
 		})
 	}
+}
+
+type MockFileReader struct{}
+
+func (m *MockFileReader) Read(p []byte) (n int, err error) {
+    return 0, fmt.Errorf("mock error: unable to read file")
+}
+
+func TestIsImageFileReadError(t *testing.T) {
+	fileReader := &MockFileReader{}
+	assert.False(t, isImage(fileReader))
 }
