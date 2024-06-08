@@ -1,0 +1,45 @@
+package upload
+
+import (
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+)
+
+func HandleUpload(imageDir string) http.HandlerFunc {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+			if err := r.ParseMultipartForm(10 << 20); err != nil {
+				http.Error(w, "Request too large", http.StatusBadRequest)
+				return
+			}
+
+			file, handler, err := r.FormFile("image")
+			if err != nil {
+				http.Error(w, "Error retrieving file", http.StatusBadRequest)
+				return
+			}
+			defer file.Close()
+
+			if !isImage(handler) {
+				http.Error(w, "File is not an image", http.StatusBadRequest)
+				return
+			}
+
+			dst, err := os.Create(filepath.Join(imageDir, handler.Filename))
+			if err != nil {
+				http.Error(w, "Error creating file", http.StatusInternalServerError)
+				return
+			}
+			defer dst.Close()
+
+			if _, err := io.Copy(dst, file); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusCreated)
+		})
+}

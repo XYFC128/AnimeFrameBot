@@ -1,4 +1,4 @@
-package utils
+package frame
 
 import (
 	"fmt"
@@ -11,22 +11,21 @@ import (
 )
 
 type Frame struct {
-	Filename string
-	Subtitle string
+	Filename string `json:"name"`
+	Subtitle string `json:"subtitle"`
 }
 
 type FrameDistance struct {
-	Frame    Frame
+	Frame
 	Distance int
 }
 
-func InitFrames() []Frame {
+func initFrames(imageDir string) ([]Frame, error) {
 	var frames []Frame
-	imageDir := "./images"
 	files, err := os.ReadDir(imageDir)
 	if err != nil {
 		fmt.Println(err)
-		return nil
+		return nil, err
 	}
 
 	for _, file := range files {
@@ -34,14 +33,18 @@ func InitFrames() []Frame {
 		frames = append(frames, Frame{Filename: file.Name(), Subtitle: subtitle})
 	}
 
-	return frames
+	return frames, nil
 }
 
 func utf8len(s string) int {
 	return len([]rune(s))
 }
 
-func MatchSubtitles(frames []Frame, input string, numFrames int) []Frame {
+func matchSubtitles(frames []Frame, input string, numFrames int) ([]Frame, error) {
+	if numFrames > len(frames) || numFrames < 0 {
+		return nil, fmt.Errorf("invalid number of frames: %d", numFrames)
+	}
+
 	var frameDistances []FrameDistance
 	for _, frame := range frames {
 		distance := fuzzy.LevenshteinDistance(input, frame.Subtitle)
@@ -51,7 +54,7 @@ func MatchSubtitles(frames []Frame, input string, numFrames int) []Frame {
 	}
 
 	if len(frameDistances) == 0 {
-		return nil
+		return []Frame{}, nil
 	}
 
 	sort.Slice(frameDistances, func(i, j int) bool {
@@ -63,15 +66,19 @@ func MatchSubtitles(frames []Frame, input string, numFrames int) []Frame {
 		matchedFrames = append(matchedFrames, frameDistances[i].Frame)
 	}
 
-	return matchedFrames	
+	return matchedFrames, nil
 }
 
-func GetRandomFrames(frames []Frame, numFrames int) []Frame {
+func getRandomFrames(frames []Frame, numFrames int) ([]Frame, error) {
+	if numFrames > len(frames) || numFrames < 0 {
+		return nil, fmt.Errorf("invalid number of frames: %d", numFrames)
+	}
+
 	randomIndices := rand.Perm(len(frames))[:numFrames]
 	var randomFrames []Frame
 	for _, index := range randomIndices {
 		randomFrames = append(randomFrames, frames[index])
 	}
 
-	return randomFrames
+	return randomFrames, nil
 }
