@@ -1,11 +1,8 @@
 package frame
 
 import (
-<<<<<<< HEAD
-	"os"
-=======
 	"fmt"
->>>>>>> d65ade5 (feat: add fuzzing test for random)
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,7 +47,7 @@ func TestInitFrames(t *testing.T) {
 
 	for _, tt := range tests {
 		if tt.imageDir != "nonexistent" {
-			err := os.Mkdir(tt.imageDir, 0755)
+			err := os.Mkdir(tt.imageDir, 0o755)
 			assert.NoError(t, err)
 			for i := 'a'; i <= 'e'; i++ {
 				f, err := os.Create(tt.imageDir + "/" + string(i) + ".png")
@@ -86,8 +83,8 @@ func TestMatchSubtitles(t *testing.T) {
 		expectError string
 	}{
 		{
-			input:       "appl",
-			numFrames:   3,
+			input:     "appl",
+			numFrames: 3,
 			expectFrame: []Frame{
 				{Filename: "a.png", Subtitle: "apple"},
 				{Filename: "c.png", Subtitle: "grape"},

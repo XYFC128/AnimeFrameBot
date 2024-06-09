@@ -1,11 +1,11 @@
 package upload
 
 import (
-	"fmt"
 	"bytes"
-	"testing"
-	"net/http"
+	"fmt"
 	"mime/multipart"
+	"net/http"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,52 +13,52 @@ import (
 
 func TestIsImage(t *testing.T) {
 	tests := []struct {
-		name	string
-		fileContent	[]byte
-		contentType	string
-		isImage	bool
+		name        string
+		fileContent []byte
+		contentType string
+		expect      bool
 	}{
 		{
-			name: "valid jpeg image",
+			name:        "valid jpeg image",
 			fileContent: []byte("\xFF\xD8\xFF"),
 			contentType: "image/jpeg",
-			isImage: true,
+			expect:      true,
 		},
 		{
-			name: "valid png image",
+			name:        "valid png image",
 			fileContent: []byte("\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"),
 			contentType: "image/png",
-			isImage: true,
+			expect:      true,
 		},
 		{
-			name: "valid gif image",
+			name:        "valid gif image",
 			fileContent: []byte("GIF87a"),
 			contentType: "image/gif",
-			isImage: true,
+			expect:      true,
 		},
 		{
-			name: "valid gif image",
+			name:        "valid gif image",
 			fileContent: []byte("GIF89a"),
 			contentType: "image/gif",
-			isImage: true,
+			expect:      true,
 		},
 		{
-			name: "invalid plain text",
+			name:        "invalid plain text",
 			fileContent: []byte("invalid"),
 			contentType: "text/plain; charset=utf-8",
-			isImage: false,
+			expect:      false,
 		},
 		{
-			name: "invalid mp4 video",
+			name:        "invalid mp4 video",
 			fileContent: []byte("\x66\x74\x79\x70"),
 			contentType: "video/mp4",
-			isImage: false,
+			expect:      false,
 		},
 		{
-			name: "invalid doc file",
+			name:        "invalid doc file",
 			fileContent: []byte("\x0D\x44\x4F\x43"),
 			contentType: "application/msword",
-			isImage: false,
+			expect:      false,
 		},
 	}
 
@@ -80,7 +80,7 @@ func TestIsImage(t *testing.T) {
 			file, _, err := req.FormFile("image")
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.isImage, isImage(file))
+			assert.Equal(t, tt.expect, isImage(file))
 		})
 	}
 }
@@ -88,7 +88,7 @@ func TestIsImage(t *testing.T) {
 type MockFileReader struct{}
 
 func (m *MockFileReader) Read(p []byte) (n int, err error) {
-    return 0, fmt.Errorf("mock error: unable to read file")
+	return 0, fmt.Errorf("mock error: unable to read file")
 }
 
 func TestIsImageFileReadError(t *testing.T) {

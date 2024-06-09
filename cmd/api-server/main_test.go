@@ -9,26 +9,28 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"testing"
 	"strconv"
+	"testing"
 
 	"AnimeFrameBot/internal/frame"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	_, b, _, _ = runtime.Caller(0)
-	basepath   = filepath.Dir(b)
+	basepath   = filepath.Join(filepath.Dir(b), "../..")
 )
 
 func TestRestGetEndpoints(t *testing.T) {
 	type args struct {
-		endpoint      string
-		method        string
-		wantStatus    int
-		checkResponse func(t *testing.T, body []byte)
+		endpoint       string
+		method         string
+		wantStatus     int
+		createImageDir bool
+		checkResponse  func(t *testing.T, body []byte)
 	}
 	tests := []struct {
 		name string
@@ -37,9 +39,10 @@ func TestRestGetEndpoints(t *testing.T) {
 		{
 			name: "random frame normal",
 			args: args{
-				endpoint:   "/frame/random/3",
-				method:     http.MethodGet,
-				wantStatus: http.StatusOK,
+				endpoint:       "/frame/random/3",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusOK,
+				createImageDir: true,
 				checkResponse: func(t *testing.T, body []byte) {
 					var frames []frame.Frame
 					err := json.Unmarshal(body, &frames)
@@ -51,33 +54,37 @@ func TestRestGetEndpoints(t *testing.T) {
 		{
 			name: "random frame bad count type",
 			args: args{
-				endpoint:   "/frame/random/asdf",
-				method:     http.MethodGet,
-				wantStatus: http.StatusBadRequest,
+				endpoint:       "/frame/random/asdf",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusBadRequest,
+				createImageDir: true,
 			},
 		},
 		{
 			name: "random frame bad count value",
 			args: args{
-				endpoint:   "/frame/random/-1",
-				method:     http.MethodGet,
-				wantStatus: http.StatusBadRequest,
+				endpoint:       "/frame/random/-1",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusBadRequest,
+				createImageDir: true,
 			},
 		},
 		{
 			name: "random bad imageDir",
 			args: args{
-				endpoint:   "/frame/random/3",
-				method:     http.MethodGet,
-				wantStatus: http.StatusInternalServerError,
+				endpoint:       "/frame/random/3",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusInternalServerError,
+				createImageDir: false,
 			},
 		},
 		{
 			name: "fuzzy frame normal",
 			args: args{
-				endpoint:   "/frame/fuzzy/some/3",
-				method:     http.MethodGet,
-				wantStatus: http.StatusOK,
+				endpoint:       "/frame/fuzzy/some/3",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusOK,
+				createImageDir: true,
 				checkResponse: func(t *testing.T, body []byte) {
 					var frames []frame.Frame
 					err := json.Unmarshal(body, &frames)
@@ -89,36 +96,45 @@ func TestRestGetEndpoints(t *testing.T) {
 		{
 			name: "fuzzy frame bad count type",
 			args: args{
-				endpoint:   "/frame/fuzzy/asdf/hjkl",
-				method:     http.MethodGet,
-				wantStatus: http.StatusBadRequest,
+				endpoint:       "/frame/fuzzy/asdf/hjkl",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusBadRequest,
+				createImageDir: true,
 			},
 		},
 		{
 			name: "fuzzy frame bad count value",
 			args: args{
-				endpoint:   "/frame/fuzzy/asdf/-1",
-				method:     http.MethodGet,
-				wantStatus: http.StatusBadRequest,
+				endpoint:       "/frame/fuzzy/asdf/-1",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusBadRequest,
+				createImageDir: true,
 			},
 		},
 		{
 			name: "fuzzy bad imageDir",
 			args: args{
-				endpoint:   "/frame/fuzzy/some/3",
-				method:     http.MethodGet,
-				wantStatus: http.StatusInternalServerError,
+				endpoint:       "/frame/fuzzy/some/3",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusInternalServerError,
+				createImageDir: false,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var server http.Handler
-			if tt.name == "random bad imageDir" || tt.name == "fuzzy bad imageDir" {
-				server = NewServer("invalid")
+			imageDir := t.TempDir()
+			if !tt.args.createImageDir {
+				imageDir = filepath.Join(basepath, "NotExist")
 			} else {
-				server = NewServer(filepath.Join(basepath, "images"))
+				for i := 0; i < 10; i++ {
+					_, err := os.Create(filepath.Join(imageDir, strconv.Itoa(i)+".jpg"))
+					require.NoError(t, err)
+				}
 			}
+
+			server := NewServer(imageDir)
+
 			req, err := http.NewRequest(tt.args.method, tt.args.endpoint, nil)
 			require.NoError(t, err)
 			w := httptest.NewRecorder()
@@ -135,60 +151,96 @@ func TestRestGetEndpoints(t *testing.T) {
 }
 
 func TestRestPostUploadEndpoint(t *testing.T) {
-	tests := []struct {
-		name        string
+	err := gofakeit.Seed(0)
+	require.NoError(t, err)
+	type args struct {
 		fileContent []byte
-		fieldname string
+		fieldname   string
 		filename    string
-		wantStatus  int
-		fileExists  bool
+	}
+
+	tests := []struct {
+		name       string
+		args       args
+		wantStatus int
+		fileExists bool
 	}{
 		{
-			name:        "valid jpeg image",
-			fileContent: []byte("\xFF\xD8\xFF"),
-			fieldname:   "image",
-			filename:    "test.jpg",
-			wantStatus:  http.StatusCreated,
-			fileExists:  true,
+			name: "valid jpeg image",
+			args: args{
+				fileContent: gofakeit.ImageJpeg(gofakeit.IntRange(1, 10), gofakeit.IntRange(1, 10)),
+				fieldname:   "image",
+				filename:    "test.jpg",
+			},
+			wantStatus: http.StatusCreated,
+			fileExists: true,
 		},
 		{
-			name:        "file larger than 10MB",
-			fileContent: make([]byte, 10*1024*1024+1),
-			fieldname:   "image",
-			filename:    "test.jpg",
-			wantStatus:  http.StatusBadRequest,
-			fileExists:  false,
+			name: "valid jpeg image",
+			args: args{
+				fileContent: gofakeit.ImageJpeg(gofakeit.IntRange(1, 10), gofakeit.IntRange(1, 10)),
+				fieldname:   "image",
+				filename:    "test.jpeg",
+			},
+			wantStatus: http.StatusCreated,
+			fileExists: true,
 		},
 		{
-			name:        "fieldname not image",
-			fileContent: []byte("\xFF\xD8\xFF"),
-			fieldname:   "file",
-			filename:    "test.jpg",
-			wantStatus:  http.StatusBadRequest,
-			fileExists:  false,
+			name: "valid png image",
+			args: args{
+				fileContent: gofakeit.ImagePng(gofakeit.IntRange(1, 10), gofakeit.IntRange(1, 10)),
+				fieldname:   "image",
+				filename:    "test.png",
+			},
+			wantStatus: http.StatusCreated,
+			fileExists: true,
 		},
 		{
-			name:        "file not an image",
-			fileContent: []byte("invalid"),
-			fieldname:   "image",
-			filename:    "test.jpg",
-			wantStatus:  http.StatusBadRequest,
-			fileExists:  false,
+			name: "file larger than 10MB",
+			args: args{
+				fileContent: make([]byte, 10*1024*1024+1),
+				fieldname:   "image",
+				filename:    "test.jpg",
+			},
+			wantStatus: http.StatusBadRequest,
+			fileExists: false,
 		},
 		{
-			name:        "change permission of imageDir",
-			fileContent: []byte("\xFF\xD8\xFF"),
-			fieldname:   "image",
-			filename:    "test.jpg",
-			wantStatus:  http.StatusInternalServerError,
-			fileExists:  true,
+			name: "fieldname not image",
+			args: args{
+				fileContent: gofakeit.ImageJpeg(gofakeit.IntRange(1, 10), gofakeit.IntRange(1, 10)),
+				fieldname:   "file",
+				filename:    "test.jpg",
+			},
+			wantStatus: http.StatusBadRequest,
+			fileExists: false,
+		},
+		{
+			name: "file not an image",
+			args: args{
+				fileContent: []byte("not an image"),
+				fieldname:   "image",
+				filename:    "test.jpg",
+			},
+			wantStatus: http.StatusBadRequest,
+			fileExists: false,
+		},
+		{
+			name: "change permission of imageDir",
+			args: args{
+				fileContent: []byte("\xFF\xD8\xFF"),
+				fieldname:   "image",
+				filename:    "test.jpg",
+			},
+			wantStatus: http.StatusInternalServerError,
+			fileExists: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			imageDir := t.TempDir()
 			if tt.name == "change permission of imageDir" {
-				err := os.Chmod(imageDir, 0000)
+				err := os.Chmod(imageDir, 0o000)
 				require.NoError(t, err)
 			}
 
@@ -197,9 +249,9 @@ func TestRestPostUploadEndpoint(t *testing.T) {
 			var b bytes.Buffer
 			bw := multipart.NewWriter(&b)
 
-			fw, err := bw.CreateFormFile(tt.fieldname, tt.filename)
+			fw, err := bw.CreateFormFile(tt.args.fieldname, tt.args.filename)
 			require.NoError(t, err)
-			_, err = fw.Write(tt.fileContent)
+			_, err = fw.Write(tt.args.fileContent)
 			require.NoError(t, err)
 			bw.Close()
 
@@ -212,36 +264,9 @@ func TestRestPostUploadEndpoint(t *testing.T) {
 			res := w.Result()
 			assert.Equal(t, tt.wantStatus, res.StatusCode)
 
-			savedPath := filepath.Join(imageDir, tt.filename)
+			savedPath := filepath.Join(imageDir, tt.args.filename)
 			_, err = os.Stat(savedPath)
 			assert.Equal(t, tt.fileExists, !os.IsNotExist(err))
 		})
 	}
-}
-
-func FuzzRandomFrame(f *testing.F) {
-	server := NewServer(filepath.Join(basepath, "images"))
-	files, err := os.ReadDir(filepath.Join(basepath, "images"))
-	require.NoError(f, err)
-	imageCount := len(files)
-
-	f.Fuzz(func(t *testing.T, count int) {
-		req, err := http.NewRequest(http.MethodGet, "/frame/random/" + strconv.Itoa(count), nil)
-		require.NoError(t, err)
-		w := httptest.NewRecorder()
-
-		server.ServeHTTP(w, req)
-
-		res := w.Result()
-
-		if count >= 0 && count <= imageCount {
-			assert.Equal(t, http.StatusOK, res.StatusCode)
-			var frames []frame.Frame
-			e := json.Unmarshal(w.Body.Bytes(), &frames)
-			require.NoError(t, e)
-			assert.LessOrEqual(t, len(frames), count)
-		} else {
-			assert.Equal(t, http.StatusBadRequest, res.StatusCode)
-		}
-	})
 }

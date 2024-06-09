@@ -3,6 +3,7 @@ module AnimeFrameBot
 go 1.22.3
 
 require (
+	github.com/brianvoe/gofakeit/v7 v7.0.3
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/stretchr/testify v1.9.0
 )
