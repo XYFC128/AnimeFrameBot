@@ -37,6 +37,13 @@ where
 python src/main.py config.ini
 ```
 
+### Telegram Commands
+1. `/help` - Shows help message
+2. `/start` - Starts the bot
+3. `/frame` {query} {N} - Gets similar N(default: 3) frames from given query
+4. `/random` {N} - Gets random N(default: 3) frames
+5. It can also send an image and upload it to the server, but be sure to provide a caption for the image if it's uploaded with compression.
+
 ### Running tests
 
 ```
