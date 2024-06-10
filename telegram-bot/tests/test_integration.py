@@ -5,6 +5,7 @@ from telethon.sessions import StringSession
 from telethon.tl.custom.message import Message
 import subprocess
 import signal
+import configparser
 
 from telethon.tl.custom.conversation import Conversation
 
@@ -15,13 +16,17 @@ def bot():
     process = subprocess.Popen(['python', 'src/main.py', 'config.ini'])
     yield
     process.send_signal(signal.SIGINT)
-    
 
 @pytest.fixture(scope="session")
-async def telegram_client():
-    """Connect to Telegram user for testing."""
+def config():
     config = configparser.ConfigParser()
-    config.read("config.ini")
+    config.read('config.ini')
+    return config
+
+
+@pytest.fixture(scope="session")
+async def telegram_client(config):
+    """Connect to Telegram user for testing."""
     api_id = int(config['Telegram API']['api_id'])
     api_hash = config['Telegram API']['api_hash']
     session_str = config['Telegram API']['session_string']
@@ -40,9 +45,9 @@ async def telegram_client():
 
 
 @pytest.mark.asyncio
-async def test_hello(telegram_client):
+async def test_hello(telegram_client, config):
     async with telegram_client.conversation(
-        '@AnimeFrameBot', timeout=10, max_messages=10000
+        config['Bot']['name'], timeout=10, max_messages=10000
     ) as conv:
         conv: Conversation
 
