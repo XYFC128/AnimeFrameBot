@@ -1,6 +1,7 @@
 package main
 
 import (
+	"AnimeFrameBot/internal/frame"
 	"bytes"
 	"encoding/json"
 	"mime/multipart"
@@ -8,20 +9,12 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"testing"
-
-	"AnimeFrameBot/internal/frame"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-)
-
-var (
-	_, b, _, _ = runtime.Caller(0)
-	basepath   = filepath.Join(filepath.Dir(b), "../..")
 )
 
 func TestRestGetEndpoints(t *testing.T) {

@@ -6,15 +6,22 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
+)
+
+var (
+	_, b, _, _ = runtime.Caller(0)
+	basepath   = filepath.Join(filepath.Dir(b), "../..")
 )
 
 func run(ctx context.Context, addr string) error {
 	runCtx, runCancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer runCancel()
 
-	serverHandler := NewServer("./images")
+	serverHandler := NewServer(filepath.Join(basepath, "images"))
 	httpServer := &http.Server{
 		Addr:    addr,
 		Handler: serverHandler,
