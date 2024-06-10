@@ -3,6 +3,8 @@ package frame
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"path/filepath"
 	"strconv"
 )
 
@@ -49,7 +51,13 @@ func HandleFuzzy(imageDir string) http.HandlerFunc {
 				return
 			}
 
-			queryStr := r.PathValue("query")
+			queryStrRaw := r.PathValue("query")
+			queryStr, err := url.QueryUnescape(queryStrRaw)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			
 			imageCountStr := r.PathValue("count")
 			imageCount, err := strconv.Atoi(imageCountStr)
 			if err != nil {
@@ -71,5 +79,18 @@ func HandleFuzzy(imageDir string) http.HandlerFunc {
 			if _, err := w.Write(bytes); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
+		})
+}
+
+func HandleDownload(imageDir string) http.HandlerFunc {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			fileNameRaw := r.PathValue("image")
+			fileName, err := url.QueryUnescape(fileNameRaw)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			http.ServeFile(w, r, filepath.Join(imageDir, fileName))
 		})
 }
