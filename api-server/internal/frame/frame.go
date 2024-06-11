@@ -1,9 +1,13 @@
 package frame
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -20,6 +24,65 @@ type FrameDistance struct {
 	Distance int
 }
 
+func extractSubtitle(fileName string) string {
+	parts := strings.Split(fileName, "_")
+	if len(parts) > 1 {
+		return strings.Join(parts[:len(parts)-1], "_")
+	}
+	return fileName
+}
+
+func isValidFileName(filename string) bool {
+	parts := strings.Split(filename, "_")
+	if len(parts) < 2 {
+		return false
+	}
+
+	hashPart := parts[len(parts)-1]
+	hashAndExt := strings.Split(hashPart, ".")
+	if len(hashAndExt) != 2 {
+		return false
+	}
+
+	hash := hashAndExt[0]
+	ext := strings.ToLower(hashAndExt[1])
+
+	if len(hash) != 64 {
+		return false
+	}
+
+	validExt := ext == "jpg" || ext == "jpeg" || ext == "png"
+	return validExt
+}
+
+func renameFileWithHash(imageDir string, fileName string) (string, error) {
+	filePath := filepath.Join(imageDir, fileName)
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		return "", err
+	}
+
+	hash := sha256.Sum256(fileBytes)
+	hashString := hex.EncodeToString(hash[:])
+
+	ext := filepath.Ext(filePath)
+	baseName := strings.TrimSuffix(filepath.Base(filePath), ext)
+	newFileName := baseName + "_" + hashString + ext
+
+	err = os.Rename(filePath, filepath.Join(imageDir, newFileName))
+	if err != nil {
+		return "", err
+	}
+
+	return newFileName, nil
+}
+
 func initFrames(imageDir string) ([]Frame, error) {
 	var frames []Frame
 	files, err := os.ReadDir(imageDir)
@@ -29,8 +92,19 @@ func initFrames(imageDir string) ([]Frame, error) {
 	}
 
 	for _, file := range files {
-		subtitle := strings.TrimSpace(strings.Split(file.Name(), ".")[0])
-		frames = append(frames, Frame{Filename: file.Name(), Subtitle: subtitle})
+		fileName := file.Name()
+
+		if !isValidFileName(fileName) {
+			newFileName, err := renameFileWithHash(imageDir, fileName)
+			if err != nil {
+				fmt.Println(err)
+				return nil, err
+			}
+			fileName = newFileName
+		}
+
+		subtitle := extractSubtitle(fileName)
+		frames = append(frames, Frame{Filename: fileName, Subtitle: subtitle})
 	}
 
 	return frames, nil
@@ -76,7 +150,7 @@ func matchSubtitlesExact(frames []Frame, input string, numFrames int) ([]Frame, 
 
 	var exactMatchedFrames []Frame
 	for _, frame := range frames {
-		if strings.Contains(strings.ToLower(frame.Subtitle), strings.ToLower(input)) {
+		if strings.EqualFold(input, frame.Subtitle) {
 			exactMatchedFrames = append(exactMatchedFrames, frame)
 		}
 	}

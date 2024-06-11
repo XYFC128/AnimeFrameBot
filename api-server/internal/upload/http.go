@@ -1,10 +1,14 @@
 package upload
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func HandleUpload(imageDir string) http.HandlerFunc {
@@ -33,12 +37,35 @@ func HandleUpload(imageDir string) http.HandlerFunc {
 				return
 			}
 
-			dst, err := os.Create(filepath.Join(imageDir, handler.Filename))
+			fileBytes, err := io.ReadAll(file)
+			if err != nil {
+				http.Error(w, "Error reading file", http.StatusInternalServerError)
+				return
+			}
+
+			hash := sha256.Sum256(fileBytes)
+			hashString := hex.EncodeToString(hash[:])
+
+			fileName, err := url.QueryUnescape(handler.Filename)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			ext := filepath.Ext(fileName)
+			baseName := strings.TrimSuffix(fileName, ext)
+			newFileName := baseName + "_" + hashString + ext
+
+			dst, err := os.Create(filepath.Join(imageDir, newFileName))
 			if err != nil {
 				http.Error(w, "Error creating file", http.StatusInternalServerError)
 				return
 			}
 			defer dst.Close()
+
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				http.Error(w, "Error resetting file cursor", http.StatusInternalServerError)
+				return
+			}
 
 			if _, err := io.Copy(dst, file); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
