@@ -40,12 +40,11 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = context.args[0]
     if len(context.args) > 1:
         frame_number = context.args[1]
-        if not frame_number.isdigit():
+        if not frame_number.isdigit() or int(frame_number) == 0:
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide a valid frame number.")
             return
-        n = int(frame_number)
-        if n < 1 or n > 10:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="I can provide 1 ~ 10 frames at once.")
+        elif int(frame_number) > 10:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="I can only provide at most 10 frames at once.")
             return
     else:
         frame_number = FRAME_NUMBER
@@ -75,12 +74,11 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) > 0:
         frame_number = context.args[0]
-        if not frame_number.isdigit():
+        if not frame_number.isdigit() or int(frame_number) == 0:
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide a valid frame number.")
             return
-        n = int(frame_number)
-        if n < 1 or n > 10:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="I can provide 1 ~ 10 frames at once.")
+        elif int(frame_number) > 10:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="I can only provide at most 10 frames at once.")
             return
     else:
         frame_number = FRAME_NUMBER

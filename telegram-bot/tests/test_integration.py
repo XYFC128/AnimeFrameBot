@@ -1,13 +1,13 @@
-import pytest
-import configparser
 from telethon import TelegramClient
 from telethon.sessions import StringSession
-from telethon.tl.custom.message import Message
-import subprocess
-import signal
-import configparser
-
 from telethon.tl.custom.conversation import Conversation
+from telethon.tl.custom.message import Message
+from telethon.tl.types import MessageMediaPhoto
+import configparser
+import configparser
+import pytest
+import signal
+import subprocess
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -70,3 +70,55 @@ async def test_help(conv: Conversation):
     await conv.send_message("/help")
     res: Message = await conv.get_response()
     assert res.text == HELP_TEXT.strip()
+
+
+@pytest.mark.asyncio
+async def test_frame_empty(conv: Conversation):
+    await conv.send_message("/frame")
+    res: Message = await conv.get_response()
+    assert res.text == "Please provide a text to frame like this: /frame {text}"
+
+
+@pytest.mark.asyncio
+async def test_frame_bad_frame_num(conv: Conversation):
+    await conv.send_message("/frame hello -1")
+    res: Message = await conv.get_response()
+    assert res.text == "Please provide a valid frame number."
+
+    await conv.send_message("/frame hello 0")
+    res: Message = await conv.get_response()
+    assert res.text == "Please provide a valid frame number."
+
+    await conv.send_message("/frame hello 100")
+    res: Message = await conv.get_response()
+    assert res.text == "I can only provide at most 10 frames at once."
+
+
+@pytest.mark.asyncio
+async def test_frame_normal(conv: Conversation):
+    await conv.send_message("/frame 爽")
+    res: Message = await conv.get_response()
+    assert isinstance(res.media, MessageMediaPhoto) or res.text == "Sorry, I'm unable to find any frame."
+
+
+@pytest.mark.asyncio
+async def test_reandom_bad_frame_num(conv: Conversation):
+    await conv.send_message("/random -1")
+    res: Message = await conv.get_response()
+    assert res.text == "Please provide a valid frame number."
+
+    await conv.send_message("/random 0")
+    res: Message = await conv.get_response()
+    assert res.text == "Please provide a valid frame number."
+
+    await conv.send_message("/random 100")
+    res: Message = await conv.get_response()
+    assert res.text == "I can only provide at most 10 frames at once."
+
+
+@pytest.mark.asyncio
+async def test_random_normal(conv: Conversation):
+    await conv.send_message("/random")
+    res: Message = await conv.get_response()
+    assert isinstance(res.media, MessageMediaPhoto) or res.text == "Sorry, I'm unable to find any frame."
+
