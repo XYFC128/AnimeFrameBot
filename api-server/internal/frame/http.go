@@ -57,7 +57,7 @@ func HandleFuzzy(imageDir string) http.HandlerFunc {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			
+
 			imageCountStr := r.PathValue("count")
 			imageCount, err := strconv.Atoi(imageCountStr)
 			if err != nil {
@@ -66,6 +66,46 @@ func HandleFuzzy(imageDir string) http.HandlerFunc {
 			}
 
 			randomFrames, err := matchSubtitles(frames, queryStr, imageCount)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			bytes, err := json.Marshal(randomFrames)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			if _, err := w.Write(bytes); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		})
+}
+
+func HandleExact(imageDir string) http.HandlerFunc {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			frames, err := initFrames(imageDir)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			queryStrRaw := r.PathValue("query")
+			queryStr, err := url.QueryUnescape(queryStrRaw)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			imageCountStr := r.PathValue("count")
+			imageCount, err := strconv.Atoi(imageCountStr)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			randomFrames, err := matchSubtitlesExact(frames, queryStr, imageCount)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return

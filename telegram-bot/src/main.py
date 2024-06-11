@@ -67,7 +67,10 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"/frame failed: {e}")
 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {frame_number} frames for {urllib.parse.unquote(text)}")
+    if len(frames) == 0:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="No frames found")
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {len(frames)} frames for {urllib.parse.unquote(text)}")
 
 async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) > 0:
@@ -101,7 +104,36 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"/random failed: {e}")
 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {frame_number} frames")
+    if len(frames) == 0:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="No frames found")
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {len(frames)} random frames")
+
+async def handle_smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    text = urllib.parse.quote(text)
+    url = f"{BASE_URL}/frame/exact/{text}/{1}"
+    
+    try:
+        response = requests.get(url)
+        frames = response.json()
+
+        if not os.path.exists(TMP_DIR):
+            os.makedirs(TMP_DIR)
+
+        for frame in frames:
+            image_url = f"{BASE_URL}/frame/{urllib.parse.quote(frame['name'])}"
+            file_name = f"{TMP_DIR}/{frame['name']}"
+            with open(file_name, 'wb') as file:
+                file.write(requests.get(image_url).content)
+            await context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(file_name, 'rb'), caption=frame['subtitle'])
+
+        for frame in frames:
+            file_name = f"{TMP_DIR}/{frame['name']}"
+            os.remove(file_name)
+
+    except Exception as e:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Failed to get frames: {e}")
 
 async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: str):
     url = f"{BASE_URL}/frame"
@@ -123,7 +155,7 @@ async def image_file_downloader(update: Update, context: ContextTypes.DEFAULT_TY
     if not caption:
         file_name = update.message.document.file_name
     else:
-        file_name = caption
+        file_name = caption + '.jpg'
     file_path = os.path.join(TMP_DIR, file_name)
     
     if not os.path.exists(TMP_DIR):
@@ -164,6 +196,8 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await random(update, context)
     elif command.startswith('/start'):
         await start(update, context)
+    else:
+        await handle_smart_reply(update, context)
 
 def start_bot(config_path: str):
     asyncio.set_event_loop(asyncio.new_event_loop())
