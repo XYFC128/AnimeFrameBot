@@ -9,7 +9,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
 FRAME_NUMBER = 3
-BASE_URL = "http://localhost:8763"
+API_URL = "http://localhost:8763"
 TMP_DIR = "tmp"
 BOT_NAME = None
 HELP_TEXT = """
@@ -44,7 +44,7 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         frame_number = FRAME_NUMBER
     text = urllib.parse.quote(text)
-    url = f"{BASE_URL}/frame/fuzzy/{text}/{frame_number}"
+    url = f"{API_URL}/frame/fuzzy/{text}/{frame_number}"
     
     try:
         response = requests.get(url)
@@ -54,7 +54,7 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
             os.makedirs(TMP_DIR)
 
         for frame in frames:
-            image_url = f"{BASE_URL}/frame/{urllib.parse.quote(frame['name'])}"
+            image_url = f"{API_URL}/frame/{urllib.parse.quote(frame['name'])}"
             file_name = f"{TMP_DIR}/{frame['name']}"
             with open(file_name, 'wb') as file:
                 file.write(requests.get(image_url).content)
@@ -78,7 +78,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         frame_number = FRAME_NUMBER
 
-    url = f"{BASE_URL}/frame/random/{frame_number}"
+    url = f"{API_URL}/frame/random/{frame_number}"
 
     try:
         response = requests.get(url)
@@ -88,7 +88,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
             os.makedirs(TMP_DIR)
 
         for frame in frames:
-            image_url = f"{BASE_URL}/frame/{urllib.parse.quote(frame['name'])}"
+            image_url = f"{API_URL}/frame/{urllib.parse.quote(frame['name'])}"
             file_name = f"{TMP_DIR}/{frame['name']}"
             with open(file_name, 'wb') as file:
                 file.write(requests.get(image_url).content)
@@ -104,7 +104,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {frame_number} frames")
 
 async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: str):
-    url = f"{BASE_URL}/frame"
+    url = f"{API_URL}/frame"
     files = {'image': open(file_path, 'rb')}
     try:
         response = requests.post(url, files=files)
@@ -169,8 +169,9 @@ def start_bot(config_path: str):
     asyncio.set_event_loop(asyncio.new_event_loop())
     config = configparser.ConfigParser()
     config.read(config_path)
-    global BOT_NAME
+    global BOT_NAME, API_URL
     BOT_NAME = config['Bot']['name']
+    API_URL = config['Bot']['api_url']
     application = ApplicationBuilder().token(config['Telegram Bot API']['token']).build()
     
     application.add_handler(CommandHandler('help', help_command))
