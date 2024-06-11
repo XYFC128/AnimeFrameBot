@@ -1,3 +1,4 @@
+from io import BytesIO
 from telegram import InputMediaPhoto, Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 import asyncio
@@ -105,7 +106,6 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logging.info(f"Smart reply for: {update.message.text}")
     text = update.message.text
     text = urllib.parse.quote(text)
     url = f"{API_URL}/frame/exact/{text}/{1}"
