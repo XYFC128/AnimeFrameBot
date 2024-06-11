@@ -41,7 +41,11 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) > 1:
         frame_number = context.args[1]
         if not frame_number.isdigit():
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide a valid frame number")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide a valid frame number.")
+            return
+        n = int(frame_number)
+        if n < 1 or n > 10:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="I can provide 1 ~ 10 frames at once.")
             return
     else:
         frame_number = FRAME_NUMBER
@@ -52,9 +56,6 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = requests.get(url)
         frames = response.json()
 
-        if not os.path.exists(TMP_DIR):
-            os.makedirs(TMP_DIR)
-
         media_group = []
         for frame in frames:
             image_url = f"{API_URL}/frame/{urllib.parse.quote(frame['name'])}"
@@ -63,18 +64,23 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
             media_group.append(media)
         if len(media_group) > 0:
             await update.effective_chat.send_media_group(media_group)
+            return
 
     except Exception as e:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"/frame failed: {e}")
+        logging.error(f"/frame failed: {e}")
 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {frame_number} frames for {urllib.parse.unquote(text)}")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I'm unable to find any frame.")
 
 
 async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) > 0:
         frame_number = context.args[0]
         if not frame_number.isdigit():
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide a valid frame number")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide a valid frame number.")
+            return
+        n = int(frame_number)
+        if n < 1 or n > 10:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="I can provide 1 ~ 10 frames at once.")
             return
     else:
         frame_number = FRAME_NUMBER
@@ -85,9 +91,6 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = requests.get(url)
         frames = response.json()
 
-        if not os.path.exists(TMP_DIR):
-            os.makedirs(TMP_DIR)
-
         media_group = []
         for frame in frames:
             image_url = f"{API_URL}/frame/{urllib.parse.quote(frame['name'])}"
@@ -96,11 +99,12 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
             media_group.append(media)
         if len(media_group) > 0:
             await update.effective_chat.send_media_group(media_group)
+            return
 
     except Exception as e:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"/random failed: {e}")
+        logging.error(f"/random failed: {e}")
 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {frame_number} random frames")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I'm unable to find any frame.")
 
 
 async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: str):
