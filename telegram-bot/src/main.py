@@ -104,6 +104,33 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I'm unable to find any frame.")
 
+async def handle_smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    text = urllib.parse.quote(text)
+    url = f"{API_URL}/frame/exact/{text}/{1}"
+    
+    try:
+        response = requests.get(url)
+        frames = response.json()
+
+        if not os.path.exists(TMP_DIR):
+            os.makedirs(TMP_DIR)
+
+        media_group = []
+        for frame in frames:
+            image_url = f"{API_URL}/frame/{urllib.parse.quote(frame['name'])}"
+            image = requests.get(image_url).content
+            media = InputMediaPhoto(image, caption=frame['subtitle'])
+            media_group.append(media)
+        if len(media_group) > 0:
+            await update.effective_chat.send_media_group(media_group)
+
+        for frame in frames:
+            file_name = f"{TMP_DIR}/{frame['name']}"
+            os.remove(file_name)
+
+    except Exception as e:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Failed to get frames: {e}")
 
 async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: str):
     url = f"{API_URL}/frame"
@@ -126,7 +153,7 @@ async def image_file_downloader(update: Update, context: ContextTypes.DEFAULT_TY
     if not caption:
         file_name = update.message.document.file_name
     else:
-        file_name = caption
+        file_name = caption + '.jpg'
     file_path = os.path.join(TMP_DIR, file_name)
     
     if not os.path.exists(TMP_DIR):
@@ -170,6 +197,8 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await random(update, context)
     elif command.startswith('/start'):
         await start(update, context)
+    else:
+        await handle_smart_reply(update, context)
 
 
 def start_bot(config_path: str):

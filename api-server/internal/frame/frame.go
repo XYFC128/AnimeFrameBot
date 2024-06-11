@@ -69,6 +69,29 @@ func matchSubtitles(frames []Frame, input string, numFrames int) ([]Frame, error
 	return matchedFrames, nil
 }
 
+func matchSubtitlesExact(frames []Frame, input string, numFrames int) ([]Frame, error) {
+	if numFrames > len(frames) || numFrames < 0 {
+		return nil, fmt.Errorf("invalid number of frames: %d", numFrames)
+	}
+
+	var exactMatchedFrames []Frame
+	for _, frame := range frames {
+		if strings.Contains(strings.ToLower(frame.Subtitle), strings.ToLower(input)) {
+			exactMatchedFrames = append(exactMatchedFrames, frame)
+		}
+	}
+
+	if len(exactMatchedFrames) == 0 {
+		return []Frame{}, nil
+	}
+
+	if len(exactMatchedFrames) < numFrames {
+		return exactMatchedFrames, nil
+	} else {
+		return getRandomFrames(exactMatchedFrames, numFrames)
+	}
+}
+
 func getRandomFrames(frames []Frame, numFrames int) ([]Frame, error) {
 	if numFrames > len(frames) || numFrames < 0 {
 		return nil, fmt.Errorf("invalid number of frames: %d", numFrames)
