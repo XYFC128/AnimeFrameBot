@@ -5,12 +5,12 @@ import configparser
 import urllib.parse
 
 from io import BytesIO
-from telegram import Update
+from telegram import InputMediaPhoto, Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
 FRAME_NUMBER = 3
 API_URL = "http://localhost:8763"
-TMP_DIR = "tmp"
+TMP_DIR = "/tmp/AnimeFrameBot"
 BOT_NAME = None
 HELP_TEXT = """
 I am a bot that can get frames you want from an anime with the text you provide.
@@ -27,8 +27,10 @@ but be sure to provide a caption for the image if you upload it with compression
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=HELP_TEXT)
 
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+
 
 async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
@@ -53,21 +55,20 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not os.path.exists(TMP_DIR):
             os.makedirs(TMP_DIR)
 
+        media_group = []
         for frame in frames:
             image_url = f"{API_URL}/frame/{urllib.parse.quote(frame['name'])}"
-            file_name = f"{TMP_DIR}/{frame['name']}"
-            with open(file_name, 'wb') as file:
-                file.write(requests.get(image_url).content)
-            await context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(file_name, 'rb'), caption=frame['subtitle'])
-
-        for frame in frames:
-            file_name = f"{TMP_DIR}/{frame['name']}"
-            os.remove(file_name)
+            image = requests.get(image_url).content
+            media = InputMediaPhoto(image, caption=frame['subtitle'])
+            media_group.append(media)
+        if len(media_group) > 0:
+            await update.effective_chat.send_media_group(media_group)
 
     except Exception as e:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"/frame failed: {e}")
 
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {frame_number} frames for {urllib.parse.unquote(text)}")
+
 
 async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) > 0:
@@ -87,21 +88,20 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not os.path.exists(TMP_DIR):
             os.makedirs(TMP_DIR)
 
+        media_group = []
         for frame in frames:
             image_url = f"{API_URL}/frame/{urllib.parse.quote(frame['name'])}"
-            file_name = f"{TMP_DIR}/{frame['name']}"
-            with open(file_name, 'wb') as file:
-                file.write(requests.get(image_url).content)
-            await context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(file_name, 'rb'), caption=frame['subtitle'])
-
-        for frame in frames:
-            file_name = f"{TMP_DIR}/{frame['name']}"
-            os.remove(file_name)
+            image = requests.get(image_url).content
+            media = InputMediaPhoto(image, caption=frame['subtitle'])
+            media_group.append(media)
+        if len(media_group) > 0:
+            await update.effective_chat.send_media_group(media_group)
 
     except Exception as e:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"/random failed: {e}")
 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {frame_number} frames")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Finished sending {frame_number} random frames")
+
 
 async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: str):
     url = f"{API_URL}/frame"
@@ -118,6 +118,7 @@ async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: 
         files['image'].close()
         os.remove(file_path)
 
+
 async def image_file_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
     caption = update.message.caption
     if not caption:
@@ -133,6 +134,7 @@ async def image_file_downloader(update: Update, context: ContextTypes.DEFAULT_TY
 
     await upload(update, context, file_path)
 
+
 async def image_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
     caption = update.message.caption
     if not caption:
@@ -146,12 +148,14 @@ async def image_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await upload(update, context, file_path)
 
+
 def extract_command_arguments(message: str):
     message = message.replace(BOT_NAME, '')
     parts = message.split(' ')
     if len(parts) > 1:
         return parts[0], parts[1:]
     return parts[0], []
+
 
 async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message.text
@@ -164,6 +168,7 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await random(update, context)
     elif command.startswith('/start'):
         await start(update, context)
+
 
 def start_bot(config_path: str):
     asyncio.set_event_loop(asyncio.new_event_loop())
