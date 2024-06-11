@@ -44,14 +44,29 @@ async def telegram_client(config):
     await client.disconnected
 
 
-@pytest.mark.asyncio
-async def test_hello(telegram_client, config):
+@pytest.fixture(scope="session")
+async def conv(telegram_client, config):
     async with telegram_client.conversation(
         config['Bot']['name'], timeout=10, max_messages=10000
     ) as conv:
         conv: Conversation
 
         await conv.send_message("/start")
-        res: Message = await conv.get_response()  # Welcome message
-        assert res.text == "I'm a bot, please talk to me!"
+        await conv.get_response()  # Welcome message
+        yield conv
+        await conv.mark_read()
 
+
+@pytest.mark.asyncio
+async def test_start(conv: Conversation):
+    await conv.send_message("/start")
+    res: Message = await conv.get_response()
+    assert res.text == "I'm a bot, please talk to me!"
+
+
+@pytest.mark.asyncio
+async def test_help(conv: Conversation):
+    from src.main import HELP_TEXT
+    await conv.send_message("/help")
+    res: Message = await conv.get_response()
+    assert res.text == HELP_TEXT.strip()
