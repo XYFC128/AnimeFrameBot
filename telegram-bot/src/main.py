@@ -17,8 +17,8 @@ I am a bot that can get frames you want from an anime with the text you provide.
 Here are the commands you can use:
 /help - Shows help message
 /start - Starts the bot
-/frame {query} {N} - Gets similar N(default: 3) frames from your query
-/random {N} - Gets random N(default: 3) frames
+/frame {query} {N} - Gets N (in range [1, 10], default: 3) frames with similar subtitle as the query
+/random {N} - Gets random N (in range [1, 10], default: 3) frames
 
 You can also send me an image and I will upload it to the server,
 but be sure to provide a caption for the image if you upload it with compression.
