@@ -122,3 +122,23 @@ async def test_random_normal(conv: Conversation):
     res: Message = await conv.get_response()
     assert isinstance(res.media, MessageMediaPhoto) or res.text == "Sorry, I'm unable to find any frame."
 
+
+@pytest.mark.asyncio
+async def test_upload_without_caption(conv: Conversation):
+    await conv.send_file('testdata/test.jpg')
+    res: Message = await conv.get_response()
+    assert res.text == "Please provide a caption for the image"
+
+
+@pytest.mark.asyncio
+async def test_upload_photo(conv: Conversation):
+    await conv.send_file('testdata/test.jpg', caption="test")
+    res: Message = await conv.get_response()
+    assert res.text.endswith("uploaded successfully")
+
+
+@pytest.mark.asyncio
+async def test_upload_file(conv: Conversation):
+    await conv.send_file('testdata/test.jpg', caption="test", force_document=True)
+    res: Message = await conv.get_response()
+    assert res.text.endswith("uploaded successfully")

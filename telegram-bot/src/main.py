@@ -1,4 +1,3 @@
-from io import BytesIO
 from telegram import InputMediaPhoto, Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 import asyncio
@@ -144,12 +143,17 @@ async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: 
         os.remove(file_path)
 
 
+def escape_path(path: str) -> str:
+    return urllib.parse.quote(path, safe='')
+
+
 async def image_file_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
     caption = update.message.caption
     if not caption:
         file_name = update.message.document.file_name
     else:
         file_name = caption + '.jpg'
+    file_name = escape_path(file_name)
     file_path = os.path.join(TMP_DIR, file_name)
     
     if not os.path.exists(TMP_DIR):
@@ -164,6 +168,8 @@ async def image_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
     caption = update.message.caption
     if not caption:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide a caption for the image")
+        return
+    caption = escape_path(caption)
     file_path = os.path.join(TMP_DIR, caption + '.jpg')
 
     if not os.path.exists(TMP_DIR):
@@ -195,7 +201,7 @@ def start_bot(config_path: str):
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('frame', frame))
     application.add_handler(CommandHandler('random', random))
-    application.add_handler(MessageHandler(filters.Document.Category('image/'), image_file_downloader))
+    application.add_handler(MessageHandler(filters.Document.IMAGE, image_file_downloader))
     application.add_handler(MessageHandler(filters.PHOTO, image_downloader))
     application.add_handler(MessageHandler(filters.TEXT, handle_smart_reply))
     application.run_polling()
