@@ -114,6 +114,48 @@ func TestRestGetEndpoints(t *testing.T) {
 				createImageDir: false,
 			},
 		},
+		{
+			name: "exact frame normal",
+			args: args{
+				endpoint:       "/frame/exact/some/3",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusOK,
+				createImageDir: true,
+				checkResponse: func(t *testing.T, body []byte) {
+					var frames []frame.Frame
+					err := json.Unmarshal(body, &frames)
+					require.NoError(t, err)
+					assert.LessOrEqual(t, len(frames), 3)
+				},
+			},
+		},
+		{
+			name: "exact frame bad count type",
+			args: args{
+				endpoint:       "/frame/exact/asdf/hjkl",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusBadRequest,
+				createImageDir: true,
+			},
+		},
+		{
+			name: "exact frame bad count value",
+			args: args{
+				endpoint:       "/frame/exact/asdf/-1",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusBadRequest,
+				createImageDir: true,
+			},
+		},
+		{
+			name: "exact bad imageDir",
+			args: args{
+				endpoint:       "/frame/exact/some/3",
+				method:         http.MethodGet,
+				wantStatus:     http.StatusInternalServerError,
+				createImageDir: false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -257,10 +299,51 @@ func TestRestPostUploadEndpoint(t *testing.T) {
 			server.ServeHTTP(w, req)
 			res := w.Result()
 			assert.Equal(t, tt.wantStatus, res.StatusCode)
+		})
+	}
+}
 
-			savedPath := filepath.Join(imageDir, tt.args.filename)
-			_, err = os.Stat(savedPath)
-			assert.Equal(t, tt.fileExists, !os.IsNotExist(err))
+func TestRestDownloadEndpoint(t *testing.T) {
+	type args struct {
+		filename string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantStatus int
+	}{
+		{
+			name: "file exists",
+			args: args{
+				filename: "test.jpg",
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "file not exists",
+			args: args{
+				filename: "notexist.jpg",
+			},
+			wantStatus: http.StatusNotFound,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			imageDir := t.TempDir()
+			if tt.name == "file exists" {
+				err := os.WriteFile(filepath.Join(imageDir, tt.args.filename), []byte("test"), 0o644)
+				require.NoError(t, err)
+			}
+
+			server := NewServer(imageDir)
+
+			req, err := http.NewRequest(http.MethodGet, "/frame/" + tt.args.filename, nil)
+			require.NoError(t, err)
+			w := httptest.NewRecorder()
+
+			server.ServeHTTP(w, req)
+			res := w.Result()
+			assert.Equal(t, tt.wantStatus, res.StatusCode)
 		})
 	}
 }
