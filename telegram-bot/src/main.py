@@ -23,6 +23,14 @@ You can also send me an image and I will upload it to the server,
 but be sure to provide a caption for the image if you upload it with compression.
 """
 
+
+def escape_path(path: str) -> str:
+    path = path.replace("\\", "/")
+    path = path.replace('/', '_')
+    path = path.lstrip('.')
+    return path.strip()
+
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=HELP_TEXT)
 
@@ -143,10 +151,6 @@ async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: 
         os.remove(file_path)
 
 
-def escape_path(path: str) -> str:
-    return urllib.parse.quote(path, safe='')
-
-
 async def image_file_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
     caption = update.message.caption
     if not caption:
@@ -178,14 +182,6 @@ async def image_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await file.download_to_drive(file_path)
 
     await upload(update, context, file_path)
-
-
-def extract_command_arguments(message: str):
-    message = message.replace(BOT_NAME, '')
-    parts = message.split(' ')
-    if len(parts) > 1:
-        return parts[0], parts[1:]
-    return parts[0], []
 
 
 def start_bot(config_path: str):
