@@ -133,7 +133,7 @@ async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: 
     try:
         response = requests.post(url, files=files)
         if response.status_code == 201:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Image {file_path.split('/')[-1]} uploaded successfully")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Image {urllib.parse.unquote(file_path.split('/')[-1])} uploaded successfully")
         else:
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Failed to upload image: {response.text}")
     except requests.RequestException as e:
