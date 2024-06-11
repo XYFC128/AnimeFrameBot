@@ -105,6 +105,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info(f"Smart reply for: {update.message.text}")
     text = update.message.text
     text = urllib.parse.quote(text)
     url = f"{API_URL}/frame/exact/{text}/{1}"
@@ -113,9 +114,6 @@ async def handle_smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         response = requests.get(url)
         frames = response.json()
 
-        if not os.path.exists(TMP_DIR):
-            os.makedirs(TMP_DIR)
-
         media_group = []
         for frame in frames:
             image_url = f"{API_URL}/frame/{urllib.parse.quote(frame['name'])}"
@@ -123,14 +121,11 @@ async def handle_smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
             media = InputMediaPhoto(image, caption=frame['subtitle'])
             media_group.append(media)
         if len(media_group) > 0:
-            await update.effective_chat.send_media_group(media_group)
-
-        for frame in frames:
-            file_name = f"{TMP_DIR}/{frame['name']}"
-            os.remove(file_name)
+            await update.effective_chat.send_media_group(media_group, reply_to_message_id=update.message.id)
 
     except Exception as e:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Failed to get frames: {e}")
+        pass
+
 
 async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: str):
     url = f"{API_URL}/frame"
@@ -217,6 +212,7 @@ def start_bot(config_path: str):
     application.add_handler(MessageHandler(filters.Document.Category('image/'), image_file_downloader))
     application.add_handler(MessageHandler(filters.PHOTO, image_downloader))
     application.add_handler(MessageHandler(filters.ChatType.GROUPS, handle_command))
+    application.add_handler(MessageHandler(filters.ChatType.PRIVATE, handle_smart_reply))
     application.run_polling()
 
 
