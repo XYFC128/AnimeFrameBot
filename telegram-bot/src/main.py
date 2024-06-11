@@ -7,7 +7,7 @@ import os
 import requests
 import urllib.parse
 
-FRAME_NUMBER = 3
+FRAME_NUMBER = 1
 API_URL = "http://localhost:8763"
 TMP_DIR = "/tmp/AnimeFrameBot"
 BOT_NAME = None
@@ -16,8 +16,8 @@ I am a bot that can get frames you want from an anime with the text you provide.
 Here are the commands you can use:
 /help - Shows help message
 /start - Starts the bot
-/frame {query} {N} - Gets N (in range [1, 10], default: 3) frames with similar subtitle as the query
-/random {N} - Gets random N (in range [1, 10], default: 3) frames
+/frame {query} {N} - Gets N (in range [1, 10], default: 1) frames with similar subtitle as the query
+/random {N} - Gets random N (in range [1, 10], default: 1) frames
 
 You can also send me an image and I will upload it to the server,
 but be sure to provide a caption for the image if you upload it with compression.
@@ -102,6 +102,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.error(f"/random failed: {e}")
 
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I'm unable to find any frame.")
+
 
 async def handle_smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
