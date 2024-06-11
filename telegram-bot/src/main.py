@@ -1,12 +1,11 @@
-import os
-import asyncio
-import requests
-import configparser
-import urllib.parse
-
-from io import BytesIO
 from telegram import InputMediaPhoto, Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+import asyncio
+import configparser
+import logging
+import os
+import requests
+import urllib.parse
 
 FRAME_NUMBER = 3
 API_URL = "http://localhost:8763"
@@ -222,7 +221,6 @@ def start_bot(config_path: str):
 
 if __name__ == '__main__':
     import sys
-    import logging
 
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
