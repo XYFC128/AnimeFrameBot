@@ -6,6 +6,10 @@
 pip install -r requirements.txt
 ```
 
+### Create a Bot in Telegram
+
+Talk to [BotFather](https://telegram.me/BotFather) to create a new bot. You should use `/setprivacy` command to disable group privacy if you wish to use smart reply feature in the group.
+
 ## Bot Configuration
 
 Create a `config.ini` file in this folder with the following content:

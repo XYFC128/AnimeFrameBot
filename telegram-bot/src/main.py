@@ -124,6 +124,7 @@ async def handle_smart_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await update.effective_chat.send_media_group(media_group, reply_to_message_id=update.message.id)
 
     except Exception as e:
+        logging.warning(f"Smart reply failed: {e}")
         pass
 
 
@@ -181,21 +182,6 @@ def extract_command_arguments(message: str):
     return parts[0], []
 
 
-async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message.text
-    command, args = extract_command_arguments(message)
-    context.args = args
-
-    if command.startswith('/frame'):
-        await frame(update, context)
-    elif command.startswith('/random'):
-        await random(update, context)
-    elif command.startswith('/start'):
-        await start(update, context)
-    else:
-        await handle_smart_reply(update, context)
-
-
 def start_bot(config_path: str):
     asyncio.set_event_loop(asyncio.new_event_loop())
     config = configparser.ConfigParser()
@@ -211,8 +197,7 @@ def start_bot(config_path: str):
     application.add_handler(CommandHandler('random', random))
     application.add_handler(MessageHandler(filters.Document.Category('image/'), image_file_downloader))
     application.add_handler(MessageHandler(filters.PHOTO, image_downloader))
-    application.add_handler(MessageHandler(filters.ChatType.GROUPS, handle_command))
-    application.add_handler(MessageHandler(filters.ChatType.PRIVATE, handle_smart_reply))
+    application.add_handler(MessageHandler(filters.TEXT, handle_smart_reply))
     application.run_polling()
 
 
