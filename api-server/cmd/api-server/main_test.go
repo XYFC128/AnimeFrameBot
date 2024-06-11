@@ -1,7 +1,6 @@
 package main
 
 import (
-	"AnimeFrameBot/internal/frame"
 	"bytes"
 	"encoding/json"
 	"mime/multipart"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	"AnimeFrameBot/internal/frame"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"

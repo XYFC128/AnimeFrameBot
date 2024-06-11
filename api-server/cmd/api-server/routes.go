@@ -1,9 +1,10 @@
 package main
 
 import (
+	"net/http"
+
 	"AnimeFrameBot/internal/frame"
 	"AnimeFrameBot/internal/upload"
-	"net/http"
 )
 
 func addRoutes(mux *http.ServeMux, imageDir string) {
