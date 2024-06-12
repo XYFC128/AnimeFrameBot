@@ -160,8 +160,6 @@ async def image_file_downloader(update: Update, context: ContextTypes.DEFAULT_TY
     file_name = escape_path(file_name)
     file_path = os.path.join(TMP_DIR, file_name)
     
-    if not os.path.exists(TMP_DIR):
-        os.makedirs(TMP_DIR)
     file = await context.bot.get_file(update.message.document.file_id)
     await file.download_to_drive(file_path)
 
@@ -176,8 +174,6 @@ async def image_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
     caption = escape_path(caption)
     file_path = os.path.join(TMP_DIR, caption + '.jpg')
 
-    if not os.path.exists(TMP_DIR):
-        os.makedirs(TMP_DIR)
     file = await context.bot.get_file(update.message.photo[-1].file_id)
     await file.download_to_drive(file_path)
 
@@ -185,6 +181,8 @@ async def image_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def start_bot(config_path: str):
+    if not os.path.exists(TMP_DIR):
+        os.makedirs(TMP_DIR)
     asyncio.set_event_loop(asyncio.new_event_loop())
     config = configparser.ConfigParser()
     config.read(config_path)
