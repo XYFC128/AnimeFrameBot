@@ -39,7 +39,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
 
 
-async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def frame_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Please provide a text to frame like this: /frame {text}")
         return
@@ -78,7 +78,7 @@ async def frame(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I'm unable to find any frame.")
 
 
-async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def random_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) > 0:
         frame_number = context.args[0]
         if not frame_number.isdigit() or int(frame_number) == 0:
@@ -195,8 +195,8 @@ def start_bot(config_path: str):
     
     application.add_handler(CommandHandler('help', help_command))
     application.add_handler(CommandHandler('start', start))
-    application.add_handler(CommandHandler('frame', frame))
-    application.add_handler(CommandHandler('random', random))
+    application.add_handler(CommandHandler('frame', frame_command))
+    application.add_handler(CommandHandler('random', random_command))
     application.add_handler(MessageHandler(filters.Document.IMAGE, image_file_downloader))
     application.add_handler(MessageHandler(filters.PHOTO, image_downloader))
     application.add_handler(MessageHandler(filters.TEXT, handle_smart_reply))
