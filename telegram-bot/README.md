@@ -50,6 +50,14 @@ python src/main.py config.ini
 
 ### Running tests
 
+Note: You should start the API server first for the integration tests to pass.
+
 ```
 pytest
+```
+
+Run unit tests only and see the coverage:
+
+```
+pytest tests/test_start_bot.py tests/test_handlers.py --cov=src
 ```
