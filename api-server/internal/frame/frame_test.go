@@ -155,7 +155,7 @@ func TestMatchSubtitles(t *testing.T) {
 		{Filename: "a.png", Subtitle: "apple"},
 		{Filename: "b.png", Subtitle: "banana"},
 		{Filename: "c.png", Subtitle: "grape"},
-		{Filename: "d.png", Subtitle: "peach"},
+		{Filename: "d.png", Subtitle: "apple"},
 	}
 
 	tests := []struct {
@@ -166,11 +166,19 @@ func TestMatchSubtitles(t *testing.T) {
 	}{
 		{
 			input:     "appl",
+			numFrames: 2,
+			expectFrame: []Frame{
+				{Filename: "a.png", Subtitle: "apple"},
+				{Filename: "d.png", Subtitle: "apple"},
+			},
+		},
+		{
+			input:     "appl",
 			numFrames: 3,
 			expectFrame: []Frame{
 				{Filename: "a.png", Subtitle: "apple"},
+				{Filename: "d.png", Subtitle: "apple"},
 				{Filename: "c.png", Subtitle: "grape"},
-				{Filename: "b.png", Subtitle: "banana"},
 			},
 		},
 		{
@@ -178,6 +186,7 @@ func TestMatchSubtitles(t *testing.T) {
 			numFrames: 4,
 			expectFrame: []Frame{
 				{Filename: "a.png", Subtitle: "apple"},
+				{Filename: "d.png", Subtitle: "apple"},
 				{Filename: "c.png", Subtitle: "grape"},
 				{Filename: "b.png", Subtitle: "banana"},
 			},
