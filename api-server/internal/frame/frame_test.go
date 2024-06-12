@@ -217,8 +217,8 @@ func TestMatchSubtitlesExact(t *testing.T) {
 		expectError string
 	}{
 		{
-			input:     "apple",
-			numFrames: 1,
+			input:       "apple",
+			numFrames:   1,
 			expectFrame: []Frame{{Filename: "a.png", Subtitle: "apple"}},
 		},
 		{
@@ -232,8 +232,8 @@ func TestMatchSubtitlesExact(t *testing.T) {
 			expectFrame: []Frame{},
 		},
 		{
-			input:     "apple",
-			numFrames: 2,
+			input:       "apple",
+			numFrames:   2,
 			expectFrame: []Frame{{Filename: "a.png", Subtitle: "apple"}},
 		},
 		{
