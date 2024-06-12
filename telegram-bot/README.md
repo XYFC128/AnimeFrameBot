@@ -2,6 +2,8 @@
 
 ## Prerequisite
 
+Python 3.10 or later is required.
+
 ```sh
 pip install -r requirements.txt
 ```
