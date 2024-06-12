@@ -135,7 +135,7 @@ func matchSubtitles(frames []Frame, input string, numFrames int) ([]Frame, error
 		return frameDistances[i].Distance < frameDistances[j].Distance
 	})
 
-	var matchedFrames []Frame
+	matchedFrames := []Frame{}
 	for i := 0; i < min(numFrames, len(frameDistances)); i++ {
 		matchedFrames = append(matchedFrames, frameDistances[i].Frame)
 	}
@@ -148,7 +148,7 @@ func matchSubtitlesExact(frames []Frame, input string, numFrames int) ([]Frame, 
 		return nil, fmt.Errorf("invalid number of frames: %d", numFrames)
 	}
 
-	var exactMatchedFrames []Frame
+	exactMatchedFrames := []Frame{}
 	for _, frame := range frames {
 		if strings.EqualFold(input, frame.Subtitle) {
 			exactMatchedFrames = append(exactMatchedFrames, frame)
@@ -159,7 +159,7 @@ func matchSubtitlesExact(frames []Frame, input string, numFrames int) ([]Frame, 
 		return []Frame{}, nil
 	}
 
-	if len(exactMatchedFrames) < numFrames {
+	if len(exactMatchedFrames) <= numFrames {
 		return exactMatchedFrames, nil
 	} else {
 		return getRandomFrames(exactMatchedFrames, numFrames)
@@ -172,7 +172,7 @@ func getRandomFrames(frames []Frame, numFrames int) ([]Frame, error) {
 	}
 
 	randomIndices := rand.Perm(len(frames))[:numFrames]
-	var randomFrames []Frame
+	randomFrames := []Frame{}
 	for _, index := range randomIndices {
 		randomFrames = append(randomFrames, frames[index])
 	}
