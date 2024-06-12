@@ -183,8 +183,7 @@ async def image_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def start_bot(config_path: str):
-    if not os.path.exists(TMP_DIR):
-        os.makedirs(TMP_DIR)
+    os.makedirs(TMP_DIR, exist_ok=True)
 
     config = configparser.ConfigParser()
     config.read(config_path)
