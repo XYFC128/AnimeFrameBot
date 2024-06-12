@@ -48,7 +48,11 @@ func TestIsValidFileName(t *testing.T) {
 		{input: "a.png", expect: false},
 		{input: "a_b.png", expect: false},
 		{input: "a_b", expect: false},
+		{input: "a_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.png", expect: true},
 		{input: "a_b_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.png", expect: true},
+		{input: "a_b_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.jpg", expect: true},
+		{input: "a_b_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.jpeg", expect: true},
+		{input: "a_b_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.txt", expect: false},
 	}
 
 	for _, tt := range tests {
@@ -170,6 +174,15 @@ func TestMatchSubtitles(t *testing.T) {
 			},
 		},
 		{
+			input:     "appl",
+			numFrames: 4,
+			expectFrame: []Frame{
+				{Filename: "a.png", Subtitle: "apple"},
+				{Filename: "c.png", Subtitle: "grape"},
+				{Filename: "b.png", Subtitle: "banana"},
+			},
+		},
+		{
 			input:       "b",
 			numFrames:   1,
 			expectFrame: []Frame{{Filename: "b.png", Subtitle: "banana"}},
@@ -177,6 +190,11 @@ func TestMatchSubtitles(t *testing.T) {
 		{
 			input:       "",
 			numFrames:   1,
+			expectFrame: []Frame{},
+		},
+		{
+			input:       "b",
+			numFrames:   0,
 			expectFrame: []Frame{},
 		},
 		{
@@ -233,7 +251,12 @@ func TestMatchSubtitlesExact(t *testing.T) {
 		},
 		{
 			input:       "apple",
-			numFrames:   2,
+			numFrames:   0,
+			expectFrame: []Frame{},
+		},
+		{
+			input:       "apple",
+			numFrames:   4,
 			expectFrame: []Frame{{Filename: "a.png", Subtitle: "apple"}},
 		},
 		{
