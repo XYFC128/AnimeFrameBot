@@ -143,9 +143,11 @@ async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: 
         if response.status_code == 201:
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Image {urllib.parse.unquote(file_path.split('/')[-1])} uploaded successfully")
         else:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Failed to upload image: {response.text}")
+            logging.error(f"Fail to upload: {response.text}")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Failed to upload due to an error in the api server.")
     except requests.RequestException as e:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"upload failed: {e}")
+        logging.error(f"Fail to upload: {e}")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Failed to upload due to an internal error.")
     finally:
         files['image'].close()
         os.remove(file_path)
@@ -183,7 +185,7 @@ async def image_downloader(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def start_bot(config_path: str):
     if not os.path.exists(TMP_DIR):
         os.makedirs(TMP_DIR)
-    asyncio.set_event_loop(asyncio.new_event_loop())
+
     config = configparser.ConfigParser()
     config.read(config_path)
     global BOT_NAME, API_URL
