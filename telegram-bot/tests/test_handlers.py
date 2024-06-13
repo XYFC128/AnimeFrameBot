@@ -34,10 +34,11 @@ async def test_start_command(mock_update, mock_context):
     mock_context.bot.send_message.assert_awaited_once_with(chat_id=mock_update.effective_chat.id, text="I'm a bot, please talk to me!")
 
 
+@pytest.mark.parametrize("query,N", [("hello", "1"), ("中/文", "1")])
 @pytest.mark.asyncio
-async def test_frame_command(mock_update, mock_context, mocker: MockerFixture):
+async def test_frame_command(mock_update, mock_context, mocker: MockerFixture, query, N):
     # Mock context
-    mock_context.args = ['query', '1']
+    mock_context.args = [query, N]
 
     # Mock the responses for requests.get
     mock_requests_get = mocker.patch('requests.get')
@@ -54,7 +55,8 @@ async def test_frame_command(mock_update, mock_context, mocker: MockerFixture):
     await frame_command(mock_update, mock_context)
 
     # Assert query the api server
-    mock_requests_get.assert_any_call(f"{API_URL}/frame/fuzzy/query/1")
+    query = urllib.parse.quote(query)
+    mock_requests_get.assert_any_call(f"{API_URL}/frame/fuzzy/{query}/{N}")
     mock_requests_get.assert_any_call(f"{API_URL}/frame/frame1")
 
     # Assert that send_message was not called
@@ -76,24 +78,18 @@ async def test_frame_command_no_arg(mock_update, mock_context):
     mock_context.bot.send_message.assert_awaited_once_with(chat_id=mock_update.effective_chat.id, text="Please provide a text to frame like this: /frame {text}")
 
 
+@pytest.mark.parametrize("query,N", [("hello", "aaa"), ("中/文", "aaa"), ("hello", "-1"), ("中/文", "-1"), ("hello", "000"), ("中/文", "000")])
 @pytest.mark.asyncio
-async def test_frame_command_invalid_frame_num(mock_update, mock_context):
-    mock_context.args = ['query', 'aaa']
-    await frame_command(mock_update, mock_context)
-    mock_context.bot.send_message.assert_awaited_with(chat_id=mock_update.effective_chat.id, text="Please provide a valid frame number.")
-
-    mock_context.args = ['query', '-1']
-    await frame_command(mock_update, mock_context)
-    mock_context.bot.send_message.assert_awaited_with(chat_id=mock_update.effective_chat.id, text="Please provide a valid frame number.")
-
-    mock_context.args = ['query', '000']
+async def test_frame_command_invalid_frame_num(mock_update, mock_context, query, N):
+    mock_context.args = [query, N]
     await frame_command(mock_update, mock_context)
     mock_context.bot.send_message.assert_awaited_with(chat_id=mock_update.effective_chat.id, text="Please provide a valid frame number.")
 
 
+@pytest.mark.parametrize("query,N", [("hello", "100"), ("中/文", "100")])
 @pytest.mark.asyncio
-async def test_frame_command_frame_num_too_large(mock_update, mock_context):
-    mock_context.args = ['query', '100']
+async def test_frame_command_frame_num_too_large(mock_update, mock_context, query, N):
+    mock_context.args = [query, N]
     await frame_command(mock_update, mock_context)
     mock_context.bot.send_message.assert_awaited_once_with(chat_id=mock_update.effective_chat.id, text="I can only provide at most 10 frames at once.")
 
