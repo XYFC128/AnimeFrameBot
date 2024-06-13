@@ -63,5 +63,5 @@ pytest
 Run unit tests only and see the coverage:
 
 ```
-pytest tests/test_start_bot.py tests/test_handlers.py --cov=src
+pytest --ignore=tests/test_integration.py --cov=src
 ```
