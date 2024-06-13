@@ -2,14 +2,16 @@
 
 ## Prerequisite
 
-Go 1.22 or later is required.
+- Go 1.22 or later is required.
+- Create `AnimeFrameBot/api-server/images` folder to store anime frames
 
 ## File Structure
-- cmd/apiserver: The main API server program  
+- `cmd/apiserver`: The main API server program  
     `main_test.go` contains integration testing.
-- internal: feature implementation  
+- `internal`: feature implementation  
     `*_test.go` contains unit testing.
     `http.go` contains handler implementation.
+- `images`: contains anime frames
 
 ## Running
 
