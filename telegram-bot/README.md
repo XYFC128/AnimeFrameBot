@@ -19,6 +19,7 @@ Create a `config.ini` file in this folder with the following content:
 ```ini
 [Bot]
 name = your_bot_name
+api_url = http://localhost:8763
 
 [Telegram Bot API]
 token = your_token
@@ -32,6 +33,7 @@ session_string = your_session_string
 where
 
 - The bot name is the username of your bot, starting with `@`. For example: `@AnimeFrameBot`.
+- api_url is the url for our api-server
 - Bot API token can be obtained from [BotFather](https://telegram.me/BotFather).
 - Configs in the Telegram API section is optional, they are used for integration testing. API id and hash can be obtained from the **API development tools** section in [Telegram Developer Portal](https://my.telegram.org).
 - The session string is the login session identifier like a cookie. It can be obtained by running `tests/get_session_string.py` and filling in your API hash and id.
