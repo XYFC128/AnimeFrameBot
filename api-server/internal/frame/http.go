@@ -36,9 +36,7 @@ func HandleRandom(imageDir string) http.HandlerFunc {
 				return
 			}
 
-			if _, err := w.Write(bytes); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+			_, _ = w.Write(bytes)
 		})
 }
 
@@ -76,9 +74,7 @@ func HandleFuzzy(imageDir string) http.HandlerFunc {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			if _, err := w.Write(bytes); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+			_, _ = w.Write(bytes)
 		})
 }
 
@@ -116,9 +112,7 @@ func HandleExact(imageDir string) http.HandlerFunc {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			if _, err := w.Write(bytes); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+			_, _ = w.Write(bytes)
 		})
 }
 
