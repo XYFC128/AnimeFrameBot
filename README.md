@@ -20,6 +20,10 @@ Then, we use Python to implement the Telegram bot and do unit tests with pytest.
 
 At last, we use telethon to do end-to-end tests for the Telegram bot.
 
+## Running and Testing
+
+Please refer to the instructions in `api-server` and `telegram-bot` directory. You should start both api-server and telegram-bot for the bot to function.
+
 ## File Structure
 - `api-server`: The main API server go program
 - `telegram-bot`: The main Telegram bot python program
