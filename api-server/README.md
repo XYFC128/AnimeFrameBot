@@ -14,7 +14,7 @@ Go 1.22 or later is required.
 ## Running
 
 ```sh
-go run ./cmd/apiserver
+go run ./cmd/api-server
 ```
 
 This will start the API server at `http://localhost:8763`, if you want to change the port, you can change `":8763"` in `func main` of `cmd/apiserver/main.go`.
@@ -30,14 +30,14 @@ go install github.com/go-gremlins/gremlins/cmd/gremlins@v0.5.0
 ```
 
 #### Unit Testing
-frame:
+`frame`:
 ```
 cd ./internal/frame
 go test . -v
 gotestsum --format testname
 ```
 
-upload:
+`upload`:
 ```
 cd ./internal/upload
 go test . -v
